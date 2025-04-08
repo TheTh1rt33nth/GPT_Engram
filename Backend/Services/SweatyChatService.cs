@@ -34,6 +34,10 @@ namespace GPT_Engram.Services
         private readonly HttpClient _httpClient;
         private readonly string _openAiApiKey;
         private const string OpenAiChatUrl = "https://api.openai.com/v1/chat/completions";
+        private JsonSerializerOptions _serializationOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
 
         public WarhammerChatService(EmbeddingService embeddingService, GameReportService reportService, string openAiApiKey)
         {
@@ -49,20 +53,20 @@ namespace GPT_Engram.Services
             var queryEmbedding = await _embeddingService.GetEmbeddingAsync(userQuery);
 
             var chunks = _reportService.GetAllChunks();
-            var topChunk = chunks
+            var topChunks = chunks
                 .OrderByDescending(c => CosineSimilarity(c.EmbeddingVector, queryEmbedding))
-                .FirstOrDefault();
+                .Take(10);
             string systemPrompt = @"
                 You are a Warhammer 40k game reports assistant. 
                 Answer questions ONLY from the provided context.
-                If the answer isn't in the context, say you're not sure.
+                If the answer isn't in the context, say you're not sure and elaborate what data are you lacking.
                 If user exhibits rude behavior, answer specifically: 'Go to Reddit.com, such sweats belong there'
                 Context:
-                " + topChunk?.ChunkText + "\n";
+                " + string.Join("\n", topChunks.Select(chunk=>chunk.ChunkText));
 
             var requestObj = new ChatCompletionRequest
             {
-                Model = "gpt-3.5-turbo",
+                Model = "gpt-4o-mini",
                 Messages = new List<ChatMessage>
                 {
                     new ChatMessage { Role = "system", Content = systemPrompt },
@@ -71,14 +75,14 @@ namespace GPT_Engram.Services
                 Temperature = 0.7
             };
 
-            var jsonContent = JsonSerializer.Serialize(requestObj);
+            var jsonContent = JsonSerializer.Serialize(requestObj, _serializationOptions);
             var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PostAsync(OpenAiChatUrl, content);
             response.EnsureSuccessStatusCode();
 
             var responseString = await response.Content.ReadAsStringAsync();
-            var completionResponse = JsonSerializer.Deserialize<ChatCompletionResponse>(responseString);
+            var completionResponse = JsonSerializer.Deserialize<ChatCompletionResponse>(responseString, _serializationOptions);
 
             return completionResponse?.Choices?[0]?.Message?.Content?.Trim() ?? "";
         }

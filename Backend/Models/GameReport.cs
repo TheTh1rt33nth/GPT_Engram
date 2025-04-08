@@ -10,7 +10,7 @@
         public string Player1Faction { get; set; }
         public string Player2Faction { get; set; }
         public int PointLimit { get; set; }
-        public string Type { get; set; } // "competitive" or "friendly"
+        public string GameType { get; set; } // "competitive" or "friendly"
     }
     public class GameReportChunk
     {

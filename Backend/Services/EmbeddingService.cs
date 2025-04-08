@@ -25,6 +25,10 @@ namespace GPT_Engram.Services
         private readonly HttpClient _httpClient;
         private readonly string _openAiApiKey;
         private const string OpenAiEmbeddingUrl = "https://api.openai.com/v1/embeddings";
+        private JsonSerializerOptions _serializationOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
 
         public EmbeddingService(string openAiApiKey)
         {
@@ -41,14 +45,14 @@ namespace GPT_Engram.Services
                 Input = new List<string> { text }
             };
 
-            var jsonContent = JsonSerializer.Serialize(requestObj);
+            var jsonContent = JsonSerializer.Serialize(requestObj, _serializationOptions);
             var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PostAsync(OpenAiEmbeddingUrl, content);
             response.EnsureSuccessStatusCode();
 
             var responseString = await response.Content.ReadAsStringAsync();
-            var embeddingResponse = JsonSerializer.Deserialize<OpenAiEmbeddingResponse>(responseString);
+            var embeddingResponse = JsonSerializer.Deserialize<OpenAiEmbeddingResponse>(responseString, _serializationOptions);
 
             return embeddingResponse?.Data?[0]?.Embedding ?? new List<float>();
         }

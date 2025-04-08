@@ -55,7 +55,7 @@ namespace GPT_Engram.Services
                 string textToEmbed = $"Game Report ID: {report.Id}.\n" +
                                       $"Player 1: {report.Player1} ({report.Player1Faction}), Score: {report.Player1Score}.\n" +
                                       $"Player 2: {report.Player2} ({report.Player2Faction}), Score: {report.Player2Score}.\n" +
-                                      $"Point Limit: {report.PointLimit}, Type: {report.Type}.\n";
+                                      $"Point Limit: {report.PointLimit}, GameType: {report.GameType}.\n";
 
                 var embedding = await _embeddingService.GetEmbeddingAsync(textToEmbed);
 
