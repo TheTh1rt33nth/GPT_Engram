@@ -1,0 +1,6 @@
+@GPT_Engram_HostAddress = http://localhost:5086
+
+GET {{GPT_Engram_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
